@@ -25,23 +25,23 @@ namespace ShortSpaces
         private const uint ModWin = 0x8;
         private const uint WmHotkey = 0x312;
         private static int _currentId;
-        private bool _Alt;
-        private bool _Control;
+        private bool _alt;
+        private bool _control;
 
         [XmlIgnore]
-        private int _Id;
+        private int _id;
 
-        private Keys _KeyCode;
-
-        [XmlIgnore]
-        private bool _Registered;
-
-        private bool _Shift;
+        private Keys _keyCode;
 
         [XmlIgnore]
-        private Control _WindowControl;
+        private bool _registered;
 
-        private bool _Windows;
+        private bool _shift;
+
+        [XmlIgnore]
+        private Control _windowControl;
+
+        private bool _windows;
 
         public Hotkey() : this(Keys.None, false, false, false, false)
         {
@@ -68,86 +68,59 @@ namespace ShortSpaces
 
         public bool Alt
         {
-            get
-            {
-                return _Alt;
-            }
+            get => _alt;
 
             set
             {
-                _Alt = value;
+                _alt = value;
                 Reregister();
             }
         }
 
         public bool Control
         {
-            get
-            {
-                return _Control;
-            }
+            get => _control;
 
             set
             {
-                _Control = value;
+                _control = value;
                 Reregister();
             }
         }
 
-        public bool Empty
-        {
-            get
-            {
-                return _KeyCode == Keys.None;
-            }
-        }
+        public bool Empty => _keyCode == Keys.None;
 
         public Keys KeyCode
         {
-            get
-            {
-                return _KeyCode;
-            }
+            get => _keyCode;
 
             set
             {
-                _KeyCode = value;
+                _keyCode = value;
                 Reregister();
             }
         }
 
-        public bool Registered
-        {
-            get
-            {
-                return _Registered;
-            }
-        }
+        public bool Registered => _registered;
 
         public bool Shift
         {
-            get
-            {
-                return _Shift;
-            }
+            get => _shift;
 
             set
             {
-                _Shift = value;
+                _shift = value;
                 Reregister();
             }
         }
 
         public bool Windows
         {
-            get
-            {
-                return _Windows;
-            }
+            get => _windows;
 
             set
             {
-                _Windows = value;
+                _windows = value;
                 Reregister();
             }
         }
@@ -185,7 +158,7 @@ namespace ShortSpaces
             if (m.Msg != WmHotkey)
                 return false;
 
-            if (_Registered && (m.WParam.ToInt32() == _Id))
+            if (_registered && m.WParam.ToInt32() == _id)
                 return OnPressed();
 
             return false;
@@ -201,19 +174,19 @@ namespace ShortSpaces
             if (controlToRegister == null)
                 return false;
 
-            if (_Registered)
+            if (_registered)
                 return true;
 
             if (Empty)
                 throw new NotSupportedException("You cannot register an empty hotkey");
 
-            _Id = _currentId;
+            _id = _currentId;
             _currentId = (_currentId + 1) % MaximumId;
 
             var modifiers = (Alt ? ModAlt : 0) | (Control ? ModControl : 0) |
                             (Shift ? ModShift : 0) | (Windows ? ModWin : 0);
 
-            if (NativeMethods.RegisterHotKey(controlToRegister.Handle, _Id, modifiers, _KeyCode) == 0)
+            if (NativeMethods.RegisterHotKey(controlToRegister.Handle, _id, modifiers, _keyCode) == 0)
             {
                 if (Marshal.GetLastWin32Error() == ErrorHotkeyAlreadyRegistered)
                     return false;
@@ -221,8 +194,8 @@ namespace ShortSpaces
                 throw new Win32Exception();
             }
 
-            _Registered = true;
-            _WindowControl = controlToRegister;
+            _registered = true;
+            _windowControl = controlToRegister;
 
             return true;
         }
@@ -254,11 +227,11 @@ namespace ShortSpaces
 
             //// TODO: bool windowsPressed = (Control.ModifierKeys | Keys.LWin) == keyEventArgs.Modifiers;
 
-            if ((KeyCode != Keys.ShiftKey) &&
-                (KeyCode != Keys.ControlKey) &&
-                (KeyCode != Keys.Menu) &&
-                (KeyCode != Keys.LWin) &&
-                (KeyCode != Keys.RWin))
+            if (KeyCode != Keys.ShiftKey &&
+                KeyCode != Keys.ControlKey &&
+                KeyCode != Keys.Menu &&
+                KeyCode != Keys.LWin &&
+                KeyCode != Keys.RWin)
                 keys.Add(KeyCode.ToString());
 
             return string.Join(" + ", keys.ToArray());
@@ -269,15 +242,15 @@ namespace ShortSpaces
         /// </summary>
         public void Unregister()
         {
-            if (!_Registered)
+            if (!_registered)
                 return;
 
-            if (!_WindowControl.IsDisposed)
-                if (NativeMethods.UnregisterHotKey(_WindowControl.Handle, _Id) == 0)
+            if (!_windowControl.IsDisposed)
+                if (NativeMethods.UnregisterHotKey(_windowControl.Handle, _id) == 0)
                     throw new Win32Exception();
 
-            _Registered = false;
-            _WindowControl = null;
+            _registered = false;
+            _windowControl = null;
         }
 
         /// <summary>
@@ -287,8 +260,7 @@ namespace ShortSpaces
         private bool OnPressed()
         {
             var handledEventArgs = new HandledEventArgs(false);
-            if (Pressed != null)
-                Pressed(this, handledEventArgs);
+            Pressed?.Invoke(this, handledEventArgs);
 
             return handledEventArgs.Handled;
         }
@@ -298,10 +270,10 @@ namespace ShortSpaces
         /// </summary>
         private void Reregister()
         {
-            if (!_Registered)
+            if (!_registered)
                 return;
 
-            var currentWindowControl = _WindowControl;
+            var currentWindowControl = _windowControl;
 
             Unregister();
             Register(currentWindowControl);

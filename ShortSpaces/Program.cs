@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Channels;
+﻿using System.Collections.Generic;
 using System.Windows.Forms;
 using WindowsDesktop;
 
@@ -32,8 +28,8 @@ namespace ShortSpaces
 
                     // Windows doesn't automatically focus the front window after switching
                     // This forces focus to the frontmost window
-                    var activeAppWindow = GetForegroundWindow();
-                    SetForegroundWindow(activeAppWindow);
+                    var activeAppWindow = NativeMethods.GetForegroundWindow();
+                    NativeMethods.SetForegroundWindow(activeAppWindow);
                 };
                 hotkeyWorkspace.Hotkey.Register(inviForm);
             }
@@ -41,17 +37,9 @@ namespace ShortSpaces
             Application.Run();
         }
 
-        [DllImport("user32.dll", ExactSpelling = true)]
-        private static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
         private class HotkeyWorkspace
         {
             public Hotkey Hotkey { get; set; }
-
             public int Workspace { get; set; }
         }
     }
